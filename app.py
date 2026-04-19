@@ -91,7 +91,7 @@ def fetch_weather(lat: float, lon: float, start: str, end: str):
 # ──────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("Location")
-    city_input = st.text_input("Search city", value="Reno NV", placeholder="e.g. Reno NV")
+    city_input = st.text_input("Search city", value="Reno", placeholder="e.g. London")
 
     lat, lon, location_label = None, None, ""
 
@@ -110,7 +110,14 @@ with st.sidebar:
                 )
                 for r in results
             }
-            chosen = st.selectbox("Select location", list(options.keys()))
+            # Default to Reno, Nevada, United States when the app first loads
+            default_key = "Reno, Nevada, United States"
+            default_index = (
+                list(options.keys()).index(default_key)
+                if default_key in options
+                else 0
+            )
+            chosen = st.selectbox("Select location", list(options.keys()), index=default_index)
             lat, lon = options[chosen]
             location_label = chosen
         else:
