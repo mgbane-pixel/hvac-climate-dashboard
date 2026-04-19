@@ -130,19 +130,19 @@ with st.sidebar:
 
     st.divider()
     st.header("Settings")
-    units = st.radio("Temperature units", ["°C", "°F"])
     bin_width = st.select_slider(
         "Bin width",
         options=[1, 2, 5],
         value=2,
         help="Width of temperature bins for frequency histograms",
     )
-    hdd_cdd_base_c = st.number_input(
-        "Degree-day base (°C)",
-        value=18.3,
-        step=0.5,
-        help="ASHRAE standard base: 18.3°C (65°F)",
+    hdd_cdd_base_f = st.number_input(
+        "Degree-day base (°F)",
+        value=65.0,
+        step=1.0,
+        help="ASHRAE standard base: 65°F (18.3°C)",
     )
+    hdd_cdd_base_c = (hdd_cdd_base_f - 32) * 5 / 9
 
     st.divider()
     st.caption(
@@ -169,15 +169,10 @@ with st.spinner(f"Fetching weather data for {location_label} ({year})…"):
 
 df = df.dropna(subset=["temperature_2m", "relative_humidity_2m"])
 
-# Unit-aware display columns
-if units == "°F":
-    df["oat_disp"] = c_to_f(df["temperature_2m"])
-    df["wb_disp"] = c_to_f(df["wet_bulb"])
-    unit_label = "°F"
-else:
-    df["oat_disp"] = df["temperature_2m"]
-    df["wb_disp"] = df["wet_bulb"]
-    unit_label = "°C"
+# Display columns — always °F
+df["oat_disp"] = c_to_f(df["temperature_2m"])
+df["wb_disp"] = c_to_f(df["wet_bulb"])
+unit_label = "°F"
 
 # Daily means in °C for degree-day calcs (always metric internally)
 daily_oat_c = df["temperature_2m"].resample("D").mean()
@@ -350,7 +345,7 @@ with col_monthly:
 col_dd, col_coin = st.columns(2)
 
 with col_dd:
-    st.subheader(f"Monthly Degree Days  (base {hdd_cdd_base_c:.1f}°C)")
+    st.subheader(f"Monthly Degree Days  (base {hdd_cdd_base_f:.0f}°F)")
     daily_df = pd.DataFrame(
         {
             "HDD": (hdd_cdd_base_c - daily_oat_c).clip(lower=0),
@@ -369,7 +364,7 @@ with col_dd:
     )
     fig_dd.update_layout(
         barmode="group",
-        yaxis_title="°C·days",
+        yaxis_title="°F·days",
         height=CHART_HEIGHT,
         margin=dict(t=40, b=40),
         legend=dict(orientation="h", yanchor="bottom", y=1.01),
@@ -491,7 +486,7 @@ df["W_gkg"] = hum_ratio_gkg(
 T_lo = min(float(df["temperature_2m"].min()) - 3.0, -5.0)
 T_hi = float(df["temperature_2m"].max()) + 3.0
 T_grid = np.linspace(T_lo, T_hi, 400)
-T_grid_disp = c_to_f(T_grid) if units == "°F" else T_grid
+T_grid_disp = c_to_f(T_grid)
 x_data_psych = df["oat_disp"]
 
 W_max_axis = max(25.0, float(df["W_gkg"].max()) * 1.1)
@@ -584,7 +579,7 @@ for h_kj in range(-20, 120, 10):
 # ── ASHRAE 55 comfort zone (approximate summer bounds) ────────────────────────
 _cb_c = [20.0, 26.0, 26.0, 20.0, 20.0]
 _cb_w = [ 4.0,  4.0, 12.0, 12.0,  4.0]
-_cb_disp = [c_to_f(t) for t in _cb_c] if units == "°F" else _cb_c
+_cb_disp = [c_to_f(t) for t in _cb_c]
 fig_psych.add_trace(
     go.Scatter(
         x=_cb_disp,
@@ -627,7 +622,7 @@ with st.expander("Raw hourly data"):
         "wind_speed_10m", "precipitation", "is_sun_hour",
     ]].copy()
     disp.columns = [
-        "OAT (°C)", "Wet Bulb (°C)", "RH (%)", "Dew Point (°C)",
+        "OAT (°C — source)", "Wet Bulb (°C — source)", "RH (%)", "Dew Point (°C — source)",
         "SW Radiation (W/m²)", "Direct Radiation (W/m²)",
         "Wind Speed (m/s)", "Precipitation (mm)", "Sun Hour",
     ]
