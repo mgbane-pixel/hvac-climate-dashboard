@@ -91,7 +91,7 @@ def fetch_weather(lat: float, lon: float, start: str, end: str):
 # ──────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("Location")
-    city_input = st.text_input("Search city", value="London", placeholder="e.g. Manchester")
+    city_input = st.text_input("Search city", value="Reno NV", placeholder="e.g. Reno NV")
 
     lat, lon, location_label = None, None, ""
 
