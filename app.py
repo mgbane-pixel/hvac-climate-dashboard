@@ -193,7 +193,7 @@ sun_hours_total = int(df["is_sun_hour"].sum())
 # HEADER METRICS
 # ──────────────────────────────────────────────────────────────────────────────
 st.subheader(
-    f"{location_label}  ·  {year}  ·  Elev {elevation:.0f} m  ·  TZ: {tz}"
+    f"{location_label}  ·  {year}  ·  Elev {elevation * 3.28084:.0f} ft  ·  TZ: {tz}"
 )
 
 c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
@@ -462,6 +462,52 @@ fig_ts.update_layout(
 st.plotly_chart(fig_ts, width="stretch")
 
 # ──────────────────────────────────────────────────────────────────────────────
+# ROW 5 — Daily Relative Humidity — Full Year
+# ──────────────────────────────────────────────────────────────────────────────
+st.subheader("Daily Relative Humidity — Full Year")
+
+daily_rh_mean = df["relative_humidity_2m"].resample("D").mean()
+daily_rh_max  = df["relative_humidity_2m"].resample("D").max()
+daily_rh_min  = df["relative_humidity_2m"].resample("D").min()
+
+fig_rh = go.Figure()
+fig_rh.add_trace(
+    go.Scatter(
+        x=daily_rh_max.index, y=daily_rh_max.values,
+        fill=None, mode="lines",
+        line=dict(color="steelblue", width=0),
+        name="RH Max", showlegend=True,
+    )
+)
+fig_rh.add_trace(
+    go.Scatter(
+        x=daily_rh_min.index, y=daily_rh_min.values,
+        fill="tonexty", mode="lines",
+        line=dict(color="lightblue", width=0),
+        fillcolor="rgba(70,130,180,0.15)",
+        name="RH Min (band)", showlegend=True,
+    )
+)
+fig_rh.add_trace(
+    go.Scatter(
+        x=daily_rh_mean.index, y=daily_rh_mean.values,
+        mode="lines", name="RH Mean",
+        line=dict(color="steelblue", width=1.5),
+    )
+)
+fig_rh.update_layout(
+    yaxis=dict(title="Relative Humidity (%)", range=[0, 100]),
+    xaxis_title="Date",
+    height=300,
+    margin=dict(t=10, b=40),
+    legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0),
+    plot_bgcolor=BG,
+    paper_bgcolor=BG,
+    hovermode="x unified",
+)
+st.plotly_chart(fig_rh, width="stretch")
+
+# ──────────────────────────────────────────────────────────────────────────────
 # PSYCHROMETRIC CHART
 # ──────────────────────────────────────────────────────────────────────────────
 st.divider()
@@ -614,7 +660,7 @@ fig_psych.update_layout(
 )
 st.caption(
     f"Purple dotted lines = constant enthalpy (kJ/kg dry air) · "
-    f"Site pressure: {P_site:.1f} kPa (elev. {elevation:.0f} m) · "
+    f"Site pressure: {P_site:.1f} kPa (elev. {elevation * 3.28084:.0f} ft) · "
     "Green dashed box = ASHRAE 55 summer comfort zone (approximate)"
 )
 st.plotly_chart(fig_psych, width="stretch")
